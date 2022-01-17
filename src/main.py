@@ -1,4 +1,3 @@
-#Execuite this under python3
 import os
 import markdownify
 
