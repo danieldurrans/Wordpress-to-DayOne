@@ -1,4 +1,6 @@
+#Execuite this under python3
 import os
+import markdownify
 
 def parseData():
     input_file= open("personal_data.xml", "r")
@@ -7,6 +9,7 @@ def parseData():
     output_date_file= open("dateTime.txt", "w")
     file_count= 0
     tag_count= 0
+    cat_count= 0
 
     while True:
         if "<item>" in content:
@@ -19,11 +22,14 @@ def parseData():
             #print(file_content)
 
             title= file_content[file_content.index("<title>")+7 : file_content.index("</title>")]
+            if "<![CDATA" in title:
+                title= title[title.index("<![CDATA")+9 : title.index("]]")]
             print(title)
 
             file_content= file_content[file_content.index("</title>"):]
             text= file_content[file_content.index("<content:encoded>")+26 : file_content.index("</content:encoded>")-3]
-            text= text.replace("#", "")
+            text= text.replace("#", '{hash}')
+            mdtext = markdownify.markdownify(text, heading_style="ATX")
             #print(text)
 
             file_content= file_content[file_content.index("</content:encoded>"):]
@@ -39,13 +45,27 @@ def parseData():
                 tag_count+= 1
 
                 file_content= file_content[file_content.index("</category>"):]
+            
+            tags.append("wordpress2dayone")
+            tag_count+= 1
 
             #print(tags)
 
+            cats= []
+            while '<category domain="category"' in file_content:
+                file_content= file_content[file_content.index('<category domain="category"'):]
+                cats.append(file_content[file_content.index("<![CDATA")+9 : file_content.index("</category>")-3])
+                cat_count+= 1
+
+                file_content= file_content[file_content.index("</category>"):]
+
             tags_string= " ".join(["#"+ i for i in tags])
+            cats_string =""
+            if len(cats) > 0:
+                cats_string= "Categories: "+ ", ".join([i for i in cats])
             #print(tags_string)
 
-            output_text_file_content= title+ "\n\n"+ text+ "\n\n"+ tags_string
+            output_text_file_content= title+ "\n\n"+ mdtext+ "\n\n"+ cats_string+ "\n\n"+ tags_string
             #print(output_text_file_content)
 
             output_date_file.write(dateTime+ "\n")
@@ -80,4 +100,3 @@ def makeDayOneEntries():
 if __name__== "__main__":
     parseData()
     makeDayOneEntries()
-
